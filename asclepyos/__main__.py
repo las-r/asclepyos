@@ -11,8 +11,9 @@ import sys
 # made by las-r on github
 
 # settings
+ROOT = Path(__file__).parent.parent.resolve()
 VER = "v2026.1.0"
-BIN = "bin/"
+BIN = ROOT / "bin/"
 #CFG = "cfg/"
 
 # helpers
@@ -275,7 +276,6 @@ def runash(args, vdir, var):
         return vdir
 
 # constants
-ROOT = Path(__file__).parent.parent.resolve()
 CMDS = {
     "ver": lambda _, __, ___: print("AsclepyOS v2026.1"),
     "exit": lambda _, __, ___: sys.exit(0),
