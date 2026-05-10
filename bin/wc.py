@@ -9,13 +9,16 @@ if len(sys.argv) < 2:
     sys.exit()
     
 filename = sys.argv[1]
-with open(filename, "r") as f:
-    lines = f.readlines()
-    
-lc = len(lines)
-wc = sum(len(line.split()) for line in lines)
-cc = sum(len(line) for line in lines)
-    
-print(f"Lines: {lc}")
-print(f"Words: {wc}")
-print(f"Characters: {cc}")
+try:
+    with open(filename, "r") as f:
+        lines = f.readlines()
+        
+    lc = len(lines)
+    wc = sum(len(line.split()) for line in lines)
+    cc = sum(len(line) for line in lines)
+        
+    print(f"Lines: {lc}")
+    print(f"Words: {wc}")
+    print(f"Characters: {cc}")
+except FileNotFoundError:
+    print("File not found.")
