@@ -18,7 +18,27 @@ AsclepyOS is a fantasy disk operating system written in Python.
 - `mv`, `move`: Move a file into another directory
 - `cp`, `copy`: Copy the contents of a file into another
 
+#### Data
+- `var`: Set a variable
+- `num`: Convert a variable to an integer
+- `:<VAR>`: Get the value of a variable
+- `+<VAL1>,<VAL2>`: Add
+- `-<VAL1>,<VAL2>`: Subtract
+- `*<VAL1>,<VAL2>`: Multiply
+- `/<VAL1>,<VAL2>`: Divide
+- `?<MIN>,<MAX>`: Random integer
+
+#### Control Flow and Logic
+- `ife`: Run next command only if two values are equal
+- `ifn`: Run next command only if two values aren't equal
+- `whe`: Run the next command repeated while two values are equal
+- `whn`: Run the next command repeated while two values aren't equal
+
 #### I/O
 - `out`: Output text
+- `in`: Input value into a variable
 - `clr`: Clear the console
 - `cont`: Pauses process until enter key pressed
+
+#### Misc.
+- `com`: Do nothing (comment)

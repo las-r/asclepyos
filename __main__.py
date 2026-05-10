@@ -1,10 +1,11 @@
 from pathlib import Path
 import os
+import random
+import re
 import shlex
 import shutil
 import subprocess
 import sys
-import time
 
 # asclepyos main
 # made by las-r on github
@@ -34,8 +35,30 @@ def resvpath(vdir, target):
     else:
         return None
 
+def substvars(cmd, var):
+    for v, val in var.items():
+        cmd = cmd.replace(f":{v}", str(val))
+    return cmd
+
+def calc(match):
+    op, v1, v2 = match.groups()
+    v1, v2 = int(v1), int(v2)
+    if op == "+": return str(v1 + v2)
+    if op == "-": return str(v1 - v2)
+    if op == "*": return str(v1 * v2)
+    if op == "/": return str(v1 // v2) if v2 != 0 else "ERR"
+    if op == "?": return random.randint(v1, v1)
+    return "0"
+
+def solve(cmd, var):
+    cmd = substvars(cmd, var)
+    pattern = r'([+\-*/])(\d+(?:\.\d+)?),(\d+(?:\.\d+)?)'
+    while re.search(pattern, cmd):
+        cmd = re.sub(pattern, calc, cmd) #type:ignore
+    return cmd
+
 # internal command functions
-def ilsdir(args, vdir):
+def ilsdir(args, vdir, _):
     targetv = args[0] if args else "."
     path = resvpath(vdir, targetv)
     try:
@@ -50,7 +73,7 @@ def ilsdir(args, vdir):
     except (FileNotFoundError, TypeError):
         print("Path not found or access denied.")
 
-def ichdir(args, vdir):
+def ichdir(args, vdir, _):
     if not args or args[0] == "~":
         return "/"
     target = args[0]
@@ -64,7 +87,7 @@ def ichdir(args, vdir):
         print("Bad directory.")
         return vdir
 
-def imkdir(args, vdir):
+def imkdir(args, vdir, _):
     if len(args) < 1:
         print("usage: md <DIRNAME>")
         return
@@ -77,7 +100,7 @@ def imkdir(args, vdir):
     else:
         print("Invalid path.")
 
-def idldir(args, vdir):
+def idldir(args, vdir, _):
     if len(args) < 1:
         print("usage: dd <DIRNAME>")
         return
@@ -90,7 +113,7 @@ def idldir(args, vdir):
     else:
         print("Bad directory or access denied.")
 
-def iview(args, vdir):
+def iview(args, vdir, _):
     if len(args) < 1:
         print("usage: view <FILENAME>")
         return
@@ -102,7 +125,7 @@ def iview(args, vdir):
     else:
         print("Bad filename.")
 
-def idel(args, vdir):
+def idel(args, vdir, _):
     if len(args) < 1:
         print("usage: del <FILENAME>")
         return
@@ -112,7 +135,7 @@ def idel(args, vdir):
     else:
         print("Bad filename.")
 
-def imove(args, vdir):
+def imove(args, vdir, _):
     if len(args) < 2:
         print("usage: mv <SOURCE> <DEST>")
         return
@@ -126,7 +149,7 @@ def imove(args, vdir):
     else:
         print("Invalid source or destination.")
 
-def icopy(args, vdir):
+def icopy(args, vdir, _):
     if len(args) < 2:
         print("usage: cp <SOURCE> <DEST>")
         return
@@ -140,22 +163,54 @@ def icopy(args, vdir):
     else:
         print("Invalid source or destination.")
 
+def inum(args, _, var):
+    if len(args) < 1:
+        print("usage: num <VAR>")
+        return
+    try:
+        var[args[0]] = int(var.get(args[0], 0))
+    except ValueError:
+        var[args[0]] = 0
+
 # exec functions
-def execcmd(cmds, vdir):
-    for cmd in cmds:
-        cmd = cmd.strip()
-        if not cmd: continue
+def execcmd(cmds, vdir, var):
+    skip = False
+    idx = 0
+    while idx < len(cmds):
+        cmd = solve(cmds[idx].strip(), var)
+        if not cmd or skip:
+            skip = False
+            idx += 1
+            continue
                 
         # split command
         cmda = shlex.split(cmd)
         name = cmda[0].lower()
         args = cmda[1:]
-
+        
         # internal
-        if name in ["cd", "chdir"]:
-            vdir = ichdir(args, vdir)
+        if name == "wle":
+            body = cmds[idx + 1:]
+            while substvars(args[0], var) == substvars(args[1], var):
+                vdir = execcmd(body, vdir, var)
+            return vdir
+        elif name == "wln":
+            body = cmds[idx + 1:]
+            while substvars(args[0], var) != substvars(args[1], var):
+                vdir = execcmd(body, vdir, var)
+            return vdir
+        elif name == "ife":
+            if substvars(args[0], var) != substvars(args[1], var):
+                return execcmd(cmds[idx + 1:], vdir, var)
+            return vdir
+        elif name == "ifn":
+            if substvars(args[0], var) == substvars(args[1], var):
+                return execcmd(cmds[idx + 1:], vdir, var)
+            return vdir
+        elif name in ["cd", "chdir"]:
+            vdir = ichdir(args, vdir, var)
         elif name in CMDS:
-            CMDS[name](args, vdir)
+            CMDS[name](args, vdir, var)
                     
         # external
         else:
@@ -166,7 +221,7 @@ def execcmd(cmds, vdir):
                     
             # local
             if localash.is_file():
-                vdir = runash([str(localash)], vdir)
+                vdir = runash([str(localash)], vdir, var)
             elif localpy.is_file():
                 subprocess.run([sys.executable, str(localpy)] + args)
             elif localexe.is_file():
@@ -178,17 +233,18 @@ def execcmd(cmds, vdir):
                 binpy = Path(BIN) / f"{name}.py" #type:ignore
                 binexe = Path(BIN) / f"{name}.exe" #type:ignore
                 if binash.is_file():
-                    vdir = runash([str(binash)], vdir)
+                    vdir = runash([str(binash)], vdir, var)
                 elif binpy.is_file():
                     subprocess.run([sys.executable, str(binpy)] + args)
                 elif binexe.is_file():
                     subprocess.run([str(binexe)] + args)
                 else:
                     print(f"Bad command or file: {name}")
+        idx += 1
     return vdir
 
 # ash script
-def runash(args, vdir):
+def runash(args, vdir, var):
     if len(args) < 1:
         print("usage: ash <SCRIPT.ASH>")
         return vdir
@@ -196,7 +252,7 @@ def runash(args, vdir):
     if scriptpath and scriptpath.is_file():
         with open(scriptpath, 'r') as f:
             lines = [line.strip() for line in f if line.strip() and not line.startswith("#")]
-            return execcmd(lines, vdir)
+            return execcmd(lines, vdir, var)
     else:
         print("Script not found.")
         return vdir
@@ -207,8 +263,8 @@ BIN = "bin/"
 CFG = "cfg/"
 ROOT = Path(__file__).parent.resolve()
 CMDS = {
-    "ver": lambda args, vdir: print("AsclepyOS v2026.1"),
-    "exit": lambda args, vdir: sys.exit(0),
+    "ver": lambda _, __, ___: print("AsclepyOS v2026.1"),
+    "exit": lambda _, __, ___: sys.exit(0),
     "ld": ilsdir, "lsdir": ilsdir,
     "md": imkdir, "mkdir": imkdir,
     "dd": idldir, "dldir": idldir,
@@ -216,20 +272,25 @@ CMDS = {
     "dl": idel, "del": idel,
     "mv": imove, "move": imove,
     "cp": icopy, "copy": icopy,
-    "out": lambda args, vdir: print(args[0]),
-    "clr": lambda args, vdir: os.system("cls" if os.name == "nt" else "clear"),
-    "cont": lambda args, vdir: input("\nPress enter to continue... ")
+    "var": lambda args, _, var: var.update({args[0]: args[1]}),
+    "num": inum,
+    "out": lambda args, _, __: print(args[0]),
+    "in": lambda args, _, var: var.update({args[0]: input(args[1])}),
+    "clr": lambda _, __, ___: os.system("cls" if os.name == "nt" else "clear"),
+    "cont": lambda _, __, ___: input("\nPress enter to continue... "),
+    "com": lambda _, __, ___: True
 }
 
 def main():
     # env
     vdir = "/"
+    var = {}
     
     # shell loop
     try:
         while True:
             cmds = input(f"~{vdir}> ").split(";")
-            vdir = execcmd(cmds, vdir)
+            vdir = execcmd(cmds, vdir, var)
                             
     # ctrl c
     except KeyboardInterrupt:
