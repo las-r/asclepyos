@@ -141,7 +141,7 @@ def icopy(args, vdir):
         print("Invalid source or destination.")
 
 # exec functions
-def execCmd(cmds):
+def execCmd(cmds, vdir):
     for cmd in cmds:
         cmd = cmd.strip()
         if not cmd: continue
@@ -208,7 +208,7 @@ def main():
     try:
         while True:
             cmds = input(f"~{vdir}> ").split(";")
-            execCmd(cmds)
+            execCmd(cmds, vdir)
                             
     # ctrl c
     except KeyboardInterrupt:
