@@ -1,6 +1,11 @@
 # AsclepyOS
 AsclepyOS is a fantasy disk operating system written in Python.
 
+## Installation
+```bash
+pip install git+https://github.com/las-r/asclepyos.git
+```
+
 ## Included Commands
 ### Internal (shell.py)
 #### System
