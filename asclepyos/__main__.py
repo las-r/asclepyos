@@ -303,6 +303,7 @@ def main():
     
     # shell loop
     try:
+        print("AsclepyOS v2026.1.0")
         while True:
             cmds = input(f"~{vdir}> ").split(";")
             vdir = execcmd(cmds, vdir, var)
