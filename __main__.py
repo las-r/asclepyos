@@ -218,7 +218,7 @@ CMDS = {
     "cp": icopy, "copy": icopy,
     "out": lambda args, vdir: print(args[0]),
     "clr": lambda args, vdir: os.system("cls" if os.name == "nt" else "clear"),
-    "cont": lambda args, vdir: input("Press enter to continue.")
+    "cont": lambda args, vdir: input("\nPress enter to continue... ")
 }
 
 def main():
