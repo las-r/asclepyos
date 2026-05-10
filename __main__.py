@@ -189,7 +189,9 @@ def execcmd(cmds, vdir, var):
         args = cmda[1:]
         
         # internal
-        if name == "wle":
+        if name == "help":
+            iview(["~/README.md"], vdir, var)
+        elif name == "wle":
             body = cmds[idx + 1:]
             while substvars(args[0], var) == substvars(args[1], var):
                 vdir = execcmd(body, vdir, var)
@@ -291,7 +293,7 @@ def main():
         while True:
             cmds = input(f"~{vdir}> ").split(";")
             vdir = execcmd(cmds, vdir, var)
-                            
+                                
     # ctrl c
     except KeyboardInterrupt:
         print("Use 'exit' to quit AsclepyOS")
