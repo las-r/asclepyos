@@ -21,87 +21,109 @@ def formatsize(size):
         size /= 1024
     return f"{size:6.2f} TB"
 
-# system commands
-def iver(args):
-    print("AsclepyOS v2026.1")
+def resvpath(vdir, target):
+    if target.startswith("~/"):
+        fpath = (ROOT / target[2:]).resolve()
+    elif target.startswith("/"):
+        fpath = (ROOT / target.lstrip("/")).resolve()
+    else:
+        fpath = (ROOT / vdir.lstrip("/")).joinpath(target).resolve()
+    if ROOT in fpath.parents or fpath == ROOT:
+        return fpath
+    else:
+        return None
 
-def iexit(args):
-    sys.exit(0)
-
-# file commands
-def ilsdir(args):
-    path = args[0] if args else "."
+# internal command functions
+def ilsdir(args, vdir):
+    targetv = args[0] if args else "."
+    path = resvpath(vdir, targetv)
     try:
         print(f"{'TYPE':<10} {'SIZE':<12} {'NAME'}")
         print("-" * 40)
         with os.scandir(path) as entries:
             for entry in entries:
                 info = entry.stat()
-                if entry.is_dir():
-                    ftype = "<DIR>"
-                    fsize = ""
-                else:
-                    ftype = "FILE"
-                    fsize = formatsize(info.st_size)
+                ftype = "<DIR>" if entry.is_dir() else "FILE"
+                fsize = "" if entry.is_dir() else formatsize(info.st_size)
                 print(f"{ftype:<10} {fsize:<12} {entry.name}")
-    except FileNotFoundError:
-        print("Path not found.")
+    except (FileNotFoundError, TypeError):
+        print("Path not found or access denied.")
 
-def ichdir(args):
+def ichdir(args, vdir):
+    if not args or args[0] == "~":
+        return "/"
+    target = args[0]
+    nrpath = resvpath(vdir, target)
+    if nrpath and nrpath.is_dir():
+        if nrpath == ROOT:
+            return "/"
+        vpath = "/" + str(nrpath.relative_to(ROOT)).replace("\\", "/")
+        return vpath.replace("//", "/")
+    else:
+        print("Bad directory.")
+        return vdir
+
+def imkdir(args, vdir):
     pass
 
-def imkdir(args):
+def idldir(args, vdir):
     pass
 
-def idldir(args):
+def iview(args, vdir):
+    if len(args) < 1:
+        print("usage: view <FILENAME>")
+        return
+    fname = resvpath(vdir, args[0])
+    if fname and fname.is_file():
+        with open(str(fname)) as f:
+            for line in f:
+                print(line.rstrip())
+    else:
+        print("Bad filename.")
+
+def idel(args, vdir):
+    if len(args) < 1:
+        print("usage: del <FILENAME>")
+        return
+    fname = resvpath(vdir, args[0])
+    if fname and fname.is_file():
+        os.remove(fname)
+    else:
+        print("Bad filename.")
+
+def imove(args, vdir):
     pass
 
-def iview(args):
+def icopy(args, vdir):
     pass
-
-def idel(args):
-    pass
-
-def icopy(args):
-    pass
-
-# io commands
-def iout(args):
-    pass
-
-def iclr(args):
-    os.system("cls" if os.name == "nt" else "clear")
-
-def icont(args):
-    input("Press enter to continue.")
 
 # constants
 VER = "v2026.1b"
 BIN = "bin/"
 CFG = "cfg/"
+ROOT = Path(__file__).parent.resolve()
 CMDS = {
-    "ver": iver,
-    "exit": iexit,
+    "ver": lambda args, vdir: print("AsclepyOS v2026.1"),
+    "exit": lambda args, vdir: sys.exit(0),
     "ld": ilsdir, "lsdir": ilsdir,
-    "cd": ichdir, "chdir": ichdir,
     "md": imkdir, "mkdir": imkdir,
     "dd": idldir, "dldir": idldir,
-    "view": iview,
-    "del": idel,
-    "copy": icopy,
-    "out": iout,
-    "clr": iclr,
-    "cont": icont
+    "vw": iview,
+    "dl": idel,
+    "cp": icopy,
+    "out": lambda args, vdir: print(args[0]),
+    "clr": lambda args, vdir: os.system("cls" if os.name == "nt" else "clear"),
+    "cont": lambda args, vdir: input("Press enter to continue.")
 }
 
 def main():
     # env
-    cdir = "./"
+    vdir = "/"
     
     # shell loop
     try:
         while True:
-            cmds = input(f"~{cdir}> ").split(";")
+            cmds = input(f"~{vdir}> ").split(";")
             for cmd in cmds:
                 cmd = cmd.strip()
                 if not cmd: continue
@@ -112,13 +134,16 @@ def main():
                 args = cmda[1:]
 
                 # internal
-                if name in CMDS:
-                    CMDS[name](args)
+                if name in ["cd", "chdir"]:
+                    vdir = ichdir(args, vdir)
+                elif name in CMDS:
+                    CMDS[name](args, vdir)
                     
                 # external
                 else:
-                    localpy = Path(cdir) / f"{name}.py"
-                    localexe = Path(cdir) / f"{name}.exe"
+                    rdir = resvpath(vdir, ".")
+                    localpy = rdir / f"{name}.py" #type:ignore
+                    localexe = rdir / f"{name}.exe" #type:ignore
                     
                     # local
                     if localpy.is_file():

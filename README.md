@@ -13,9 +13,10 @@ AsclepyOS is a fantasy disk operating system written in Python.
 - `cd`, `chdir`: Change working directory
 - `md`, `mkdir`: Make a new directory
 - `dd`, `dldir`: Delete a directory
-- `view`: View the contents of a file
-- `del`: Delete a file
-- `copy`: Copy the contents of a file into another
+- `vw`: View the contents of a file
+- `dl`: Delete a file
+- `mv`: Move a file into another directory
+- `cp`: Copy the contents of a file into another
 
 #### I/O
 - `out`: Output text
