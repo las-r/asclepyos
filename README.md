@@ -51,6 +51,10 @@ pip install git+https://github.com/las-r/asclepyos.git
 
 ### External (bin/)
 - `calc`: Minimal calculator (w/ Python's eval)
+- `find`: File searcher
+- `hello`: Hello, world!
+- `hex`: Hex dumper
+- `shred`: Secure deleter
 - `tex`: Minimal text editor
 - `wait`: Basic execution pauser
 - `wc`: Line / word / character counter
