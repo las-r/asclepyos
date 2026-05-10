@@ -20,6 +20,4 @@ AsclepyOS is a fantasy disk operating system written in Python.
 #### I/O
 - `out`: Output text
 - `clr`: Clear the console
-
-#### Control
 - `cont`: Pauses process until enter key pressed
