@@ -1,6 +1,7 @@
 from pathlib import Path
 import os
 import shlex
+import shutil
 import subprocess
 import sys
 import time
@@ -64,10 +65,30 @@ def ichdir(args, vdir):
         return vdir
 
 def imkdir(args, vdir):
-    pass
+    if len(args) < 1:
+        print("usage: md <DIRNAME>")
+        return
+    path = resvpath(vdir, args[0])
+    if path:
+        try:
+            os.makedirs(path, exist_ok=True)
+        except Exception as e:
+            print(f"Error creating directory: {e}")
+    else:
+        print("Invalid path.")
 
 def idldir(args, vdir):
-    pass
+    if len(args) < 1:
+        print("usage: dd <DIRNAME>")
+        return
+    path = resvpath(vdir, args[0])
+    if path and path.is_dir() and path != ROOT:
+        try:
+            shutil.rmtree(path)
+        except Exception as e:
+            print(f"Error deleting directory: {e}")
+    else:
+        print("Bad directory or access denied.")
 
 def iview(args, vdir):
     if len(args) < 1:
@@ -92,10 +113,72 @@ def idel(args, vdir):
         print("Bad filename.")
 
 def imove(args, vdir):
-    pass
+    if len(args) < 2:
+        print("usage: mv <SOURCE> <DEST>")
+        return
+    src = resvpath(vdir, args[0])
+    dst = resvpath(vdir, args[1])
+    if src and dst and src.exists():
+        try:
+            shutil.move(str(src), str(dst))
+        except Exception as e:
+            print(f"Error moving file: {e}")
+    else:
+        print("Invalid source or destination.")
 
 def icopy(args, vdir):
-    pass
+    if len(args) < 2:
+        print("usage: cp <SOURCE> <DEST>")
+        return
+    src = resvpath(vdir, args[0])
+    dst = resvpath(vdir, args[1])
+    if src and dst and src.is_file():
+        try:
+            shutil.copy2(str(src), str(dst))
+        except Exception as e:
+            print(f"Error copying file: {e}")
+    else:
+        print("Invalid source or destination.")
+
+# exec functions
+def execCmd(cmds):
+    for cmd in cmds:
+        cmd = cmd.strip()
+        if not cmd: continue
+                
+        # split command
+        cmda = shlex.split(cmd)
+        name = cmda[0].lower()
+        args = cmda[1:]
+
+        # internal
+        if name in ["cd", "chdir"]:
+            vdir = ichdir(args, vdir)
+        elif name in CMDS:
+            CMDS[name](args, vdir)
+                    
+        # external
+        else:
+            rdir = resvpath(vdir, ".")
+            localpy = rdir / f"{name}.py" #type:ignore
+            localexe = rdir / f"{name}.exe" #type:ignore
+                    
+            # local
+            if localpy.is_file():
+                subprocess.run([sys.executable, str(localpy)] + args)
+            elif localexe.is_file():
+                subprocess.run([str(localexe)] + args)
+                        
+            # bin
+            else:
+                binpy = Path(BIN) / f"{name}.py" #type:ignore
+                binexe = Path(BIN) / f"{name}.exe" #type:ignore
+                if binpy.is_file():
+                    subprocess.run([sys.executable, str(binpy)] + args)
+                elif binexe.is_file():
+                    subprocess.run([str(binexe)] + args)
+                else:
+                    print(f"Bad command or file: {name}")
 
 # constants
 VER = "v2026.1b"
@@ -108,9 +191,10 @@ CMDS = {
     "ld": ilsdir, "lsdir": ilsdir,
     "md": imkdir, "mkdir": imkdir,
     "dd": idldir, "dldir": idldir,
-    "vw": iview,
-    "dl": idel,
-    "cp": icopy,
+    "vw": iview, "view": iview,
+    "dl": idel, "del": idel,
+    "mv": imove, "move": imove,
+    "cp": icopy, "copy": idel,
     "out": lambda args, vdir: print(args[0]),
     "clr": lambda args, vdir: os.system("cls" if os.name == "nt" else "clear"),
     "cont": lambda args, vdir: input("Press enter to continue.")
@@ -124,40 +208,7 @@ def main():
     try:
         while True:
             cmds = input(f"~{vdir}> ").split(";")
-            for cmd in cmds:
-                cmd = cmd.strip()
-                if not cmd: continue
-                
-                # split command
-                cmda = shlex.split(cmd)
-                name = cmda[0].lower()
-                args = cmda[1:]
-
-                # internal
-                if name in ["cd", "chdir"]:
-                    vdir = ichdir(args, vdir)
-                elif name in CMDS:
-                    CMDS[name](args, vdir)
-                    
-                # external
-                else:
-                    rdir = resvpath(vdir, ".")
-                    localpy = rdir / f"{name}.py" #type:ignore
-                    localexe = rdir / f"{name}.exe" #type:ignore
-                    
-                    # local
-                    if localpy.is_file():
-                        subprocess.run([sys.executable, str(localpy)] + args)
-                    elif localexe.is_file():
-                        subprocess.run([str(localexe)] + args)
-                        
-                    # bin
-                    else:
-                        binpy = Path(BIN) / f"{name}.py"
-                        if binpy.is_file():
-                            subprocess.run([sys.executable, str(binpy)] + args)
-                        else:
-                            print(f"Bad command or file: {name}")
+            execCmd(cmds)
                             
     # ctrl c
     except KeyboardInterrupt:
