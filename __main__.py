@@ -125,6 +125,16 @@ def iview(args, vdir, _):
     else:
         print("Bad filename.")
 
+def inew(args, vdir, _):
+    if len(args) < 1:
+        print("usage: view <FILENAME>")
+        return
+    fname = resvpath(vdir, args[0])
+    if fname and not fname.is_file():
+        open(fname, "x").close()
+    else:
+        print("Bad filename or file already exists.")
+
 def idel(args, vdir, _):
     if len(args) < 1:
         print("usage: del <FILENAME>")
@@ -271,6 +281,7 @@ CMDS = {
     "md": imkdir, "mkdir": imkdir,
     "dd": idldir, "dldir": idldir,
     "vw": iview, "view": iview,
+    "nw": inew, "new": inew,
     "dl": idel, "del": idel,
     "mv": imove, "move": imove,
     "cp": icopy, "copy": icopy,
