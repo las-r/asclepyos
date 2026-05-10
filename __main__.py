@@ -1,6 +1,6 @@
 from pathlib import Path
-from runpy import run_path
 import os
+import shlex
 import subprocess
 import sys
 import time
@@ -21,13 +21,14 @@ def formatsize(size):
         size /= 1024
     return f"{size:6.2f} TB"
 
-# internal commands
+# system commands
 def iver(args):
     print("AsclepyOS v2026.1")
 
 def iexit(args):
     sys.exit(0)
 
+# file commands
 def ilsdir(args):
     path = args[0] if args else "."
     try:
@@ -46,15 +47,51 @@ def ilsdir(args):
     except FileNotFoundError:
         print("Path not found.")
 
+def ichdir(args):
+    pass
+
+def imkdir(args):
+    pass
+
+def idldir(args):
+    pass
+
+def iview(args):
+    pass
+
+def idel(args):
+    pass
+
+def icopy(args):
+    pass
+
+# io commands
+def iout(args):
+    pass
+
+def iclr(args):
+    os.system("cls" if os.name == "nt" else "clear")
+
+def icont(args):
+    input("Press enter to continue.")
+
 # constants
-VER = "v2026.1"
+VER = "v2026.1b"
 BIN = "bin/"
 CFG = "cfg/"
 CMDS = {
     "ver": iver,
     "exit": iexit,
     "ld": ilsdir, "lsdir": ilsdir,
-    
+    "cd": ichdir, "chdir": ichdir,
+    "md": imkdir, "mkdir": imkdir,
+    "dd": idldir, "dldir": idldir,
+    "view": iview,
+    "del": idel,
+    "copy": icopy,
+    "out": iout,
+    "clr": iclr,
+    "cont": icont
 }
 
 def main():
@@ -70,7 +107,7 @@ def main():
                 if not cmd: continue
                 
                 # split command
-                cmda = cmd.split(" ")
+                cmda = shlex.split(cmd)
                 name = cmda[0].lower()
                 args = cmda[1:]
 
