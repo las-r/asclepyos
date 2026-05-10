@@ -1,7 +1,7 @@
 # AsclepyOS
 AsclepyOS is a fantasy disk operating system written in Python.
 
-## Commands
+## Included Commands
 ### Internal (shell.py)
 #### System
 - `help`: View contents of README.md
@@ -43,3 +43,9 @@ AsclepyOS is a fantasy disk operating system written in Python.
 
 #### Misc.
 - `com`: Do nothing (comment)
+
+### External (bin/)
+- `calc`: Minimal calculator (w/ Python's eval)
+- `tex`: Minimal text editor
+- `wait`: Basic execution pauser
+- `wc`: Line / word / character counter
