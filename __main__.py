@@ -141,7 +141,7 @@ def icopy(args, vdir):
         print("Invalid source or destination.")
 
 # exec functions
-def execCmd(cmds, vdir):
+def execcmd(cmds, vdir):
     for cmd in cmds:
         cmd = cmd.strip()
         if not cmd: continue
@@ -160,25 +160,46 @@ def execCmd(cmds, vdir):
         # external
         else:
             rdir = resvpath(vdir, ".")
+            localash = rdir / f"{name}.ash" #type:ignore
             localpy = rdir / f"{name}.py" #type:ignore
             localexe = rdir / f"{name}.exe" #type:ignore
                     
             # local
-            if localpy.is_file():
+            if localash.is_file():
+                vdir = runash([str(localash)], vdir)
+            elif localpy.is_file():
                 subprocess.run([sys.executable, str(localpy)] + args)
             elif localexe.is_file():
                 subprocess.run([str(localexe)] + args)
                         
             # bin
             else:
+                binash = Path(BIN) / f"{name}.ash" #type:ignore
                 binpy = Path(BIN) / f"{name}.py" #type:ignore
                 binexe = Path(BIN) / f"{name}.exe" #type:ignore
-                if binpy.is_file():
+                if binash.is_file():
+                    vdir = runash([str(binash)], vdir)
+                elif binpy.is_file():
                     subprocess.run([sys.executable, str(binpy)] + args)
                 elif binexe.is_file():
                     subprocess.run([str(binexe)] + args)
                 else:
                     print(f"Bad command or file: {name}")
+    return vdir
+
+# ash script
+def runash(args, vdir):
+    if len(args) < 1:
+        print("usage: ash <SCRIPT.ASH>")
+        return vdir
+    scriptpath = resvpath(vdir, args[0])
+    if scriptpath and scriptpath.is_file():
+        with open(scriptpath, 'r') as f:
+            lines = [line.strip() for line in f if line.strip() and not line.startswith("#")]
+            return execcmd(lines, vdir)
+    else:
+        print("Script not found.")
+        return vdir
 
 # constants
 VER = "v2026.1b"
@@ -194,7 +215,7 @@ CMDS = {
     "vw": iview, "view": iview,
     "dl": idel, "del": idel,
     "mv": imove, "move": imove,
-    "cp": icopy, "copy": idel,
+    "cp": icopy, "copy": icopy,
     "out": lambda args, vdir: print(args[0]),
     "clr": lambda args, vdir: os.system("cls" if os.name == "nt" else "clear"),
     "cont": lambda args, vdir: input("Press enter to continue.")
@@ -208,7 +229,7 @@ def main():
     try:
         while True:
             cmds = input(f"~{vdir}> ").split(";")
-            execCmd(cmds, vdir)
+            vdir = execcmd(cmds, vdir)
                             
     # ctrl c
     except KeyboardInterrupt:
