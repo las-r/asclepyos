@@ -10,6 +10,11 @@ import sys
 # asclepyos main
 # made by las-r on github
 
+# settings
+VER = "v2026.1b"
+BIN = "bin/"
+#CFG = "cfg/"
+
 # helpers
 def checkargs(args, alen):
     if len(args) != alen:
@@ -270,9 +275,6 @@ def runash(args, vdir, var):
         return vdir
 
 # constants
-VER = "v2026.1b"
-BIN = "bin/"
-CFG = "cfg/"
 ROOT = Path(__file__).parent.resolve()
 CMDS = {
     "ver": lambda _, __, ___: print("AsclepyOS v2026.1"),
