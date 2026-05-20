@@ -1,4 +1,4 @@
-import math
+from math import *
 import sys
 
 # calc: calculator
